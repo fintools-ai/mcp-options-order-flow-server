@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include requirements.txt
+recursive-include src *.py
+recursive-include src/proto *.py
+exclude test_tools.py
+exclude dev_start.sh
+exclude *.md
+exclude vts_*
+exclude test_xml_*

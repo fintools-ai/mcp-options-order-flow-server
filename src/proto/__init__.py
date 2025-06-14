@@ -1,0 +1,1 @@
+"""Generated protobuf classes for mcp-trading-data-broker integration"""
