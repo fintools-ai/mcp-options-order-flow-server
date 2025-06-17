@@ -3,3 +3,4 @@ fastmcp>=0.1.0
 grpcio>=1.60.0
 grpcio-tools>=1.60.0
 protobuf>=4.25.0
+nest-asyncio>=1.5.0

@@ -1,13 +1,29 @@
 """Options flow analysis tool for MCP"""
 
+import asyncio
 import logging
 from typing import Optional
+import nest_asyncio
+
+# Enable nested event loops
+nest_asyncio.apply()
 
 from src.formatters.context_builder import OptionsContextBuilder
 from src.formatters.xml_formatter import OptionsMCPFormatter
 from src.storage.grpc_client import OptionsOrderFlowGRPCClient
 
 logger = logging.getLogger(__name__)
+
+
+def _run_async(coro):
+    """Helper to run async code in potentially nested event loops"""
+    try:
+        loop = asyncio.get_running_loop()
+        # If we're already in a running loop, we can await directly
+        return coro
+    except RuntimeError:
+        # No running loop, create new one
+        return asyncio.run(coro)
 
 
 async def get_options_flow(ticker: str, history_minutes: int = 20) -> str:
@@ -25,16 +41,24 @@ async def get_options_flow(ticker: str, history_minutes: int = 20) -> str:
         # Get gRPC client
         grpc_client = OptionsOrderFlowGRPCClient()
         
-        # Get comprehensive snapshot from data broker
-        snapshot = await grpc_client.get_options_order_flow_snapshot(
-            ticker=ticker,
-            expiration=None,  # All expirations
-            strikes=None,     # All strikes
-            option_types=None,  # All option types
-            history_seconds=history_minutes * 60,
-            include_patterns=True,
-            include_aggregations=True
-        )
+        # Get comprehensive snapshot from data broker with timeout
+        try:
+            snapshot = await asyncio.wait_for(
+                grpc_client.get_options_order_flow_snapshot(
+                    ticker=ticker,
+                    expiration=None,  # All expirations
+                    strikes=None,     # All strikes
+                    option_types=None,  # All option types
+                    history_seconds=history_minutes * 60,
+                    include_patterns=True,
+                    include_aggregations=True
+                ),
+                timeout=30.0  # 30 second timeout
+            )
+        except asyncio.TimeoutError:
+            return build_error_response(ticker, "Request timeout - data broker not responding")
+        except Exception as e:
+            return build_error_response(ticker, f"Connection error: {str(e)}")
         
         if not snapshot:
             return build_error_response(ticker, "Failed to get data from options order flow broker")

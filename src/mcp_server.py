@@ -18,6 +18,10 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler(sys.stderr)]
 )
+
+# Disable FastMCP logging to stdout
+logging.getLogger("FastMCP").setLevel(logging.ERROR)
+logging.getLogger("fastmcp").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 # Import tool implementations

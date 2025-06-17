@@ -58,16 +58,8 @@ class OptionsOrderFlowGRPCClient:
             # Create async channel
             self._channel = grpc.aio.insecure_channel(f'{self.host}:{self.port}')
             
-            # Test connection with a simple call timeout
-            try:
-                await asyncio.wait_for(
-                    self._channel.check_connectivity_state(try_to_connect=True),
-                    timeout=5.0
-                )
-            except asyncio.TimeoutError:
-                # If check_connectivity_state isn't available, we'll proceed anyway
-                # and let the actual RPC calls fail if the server isn't available
-                pass
+            # Skip connectivity check as it's not available in grpc.aio
+            # Connection will be validated when making actual RPC calls
             
             # Create stub
             self._stub = options_order_flow_pb2_grpc.OptionsOrderFlowServiceStub(self._channel)
